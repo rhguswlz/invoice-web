@@ -1,0 +1,2 @@
+- [Project Overview](project-overview.md) — Next.js 16 + React 19 스타터킷, shadcn/ui radix-nova 스타일, App Router 기반
+- [Known Issues](known-issues.md) — ESLint 에러 2개 포함 반복 발생하는 패턴 추적

@@ -1,0 +1,37 @@
+{
+  "language": "Korean",
+  "agent": "docs-comments-writer",
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/slack-notification-hook.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/slack-stop-hook.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "모든 마크다운 파일(.md)과 코드 주석은 반드시 한글로만 작성되어야 합니다. 다음 파일이 한글로만 작성되었는지 확인해주세요: $ARGUMENTS. 영문이 포함되어 있으면 안 됩니다 (변수명, 함수명 등은 제외)."
+          }
+        ]
+      }
+    ]
+  }
+}
