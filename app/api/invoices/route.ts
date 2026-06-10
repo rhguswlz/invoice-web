@@ -18,8 +18,8 @@ export async function GET(): Promise<NextResponse<ApiResponse<InvoiceListItem[]>
       database_id: NOTION_DATABASE_ID,
       sorts: [
         {
-          // 발급일 내림차순 정렬 (최신 견적서가 먼저 표시)
-          property: "발급일",
+          // 발행일 내림차순 정렬 (최신 견적서가 먼저 표시)
+          property: "발행일",
           direction: "descending",
         },
       ],

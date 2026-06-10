@@ -3,12 +3,13 @@
  * GET /api/invoices/[id]
  *
  * 노션 페이지 ID를 기반으로 특정 견적서 데이터를 조회합니다.
- * 페이지 속성과 테이블 블록(품목 목록)을 함께 가져와 완전한 견적서를 구성합니다.
+ * 견적서 페이지 속성과 별도 Items DB의 연결된 품목을 함께 가져와
+ * 완전한 견적서를 구성합니다.
  */
 import { NextResponse } from "next/server";
-import { notion } from "@/lib/notion";
+import { notion, NOTION_ITEMS_DATABASE_ID } from "@/lib/notion";
 import { mapPageToInvoice } from "@/lib/invoice-mapper";
-import type { PageObjectResponse, BlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import type { ApiResponse, Invoice } from "@/types";
 
 interface RouteParams {
@@ -22,7 +23,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    // 노션 페이지 속성 조회
+    // 견적서 페이지 속성 조회
     const page = await notion.pages.retrieve({ page_id: id });
 
     if (!("properties" in page)) {
@@ -32,15 +33,24 @@ export async function GET(
       );
     }
 
-    // 페이지 본문 블록 목록 조회 (품목 테이블 블록 포함)
-    const blocksResponse = await notion.blocks.children.list({
-      block_id: id,
+    // Items DB에서 현재 견적서와 연결된 품목 조회
+    // 'Invoices' Relation 속성이 현재 견적서 페이지 ID를 포함하는 항목만 필터링
+    const itemsResponse = await notion.databases.query({
+      database_id: NOTION_ITEMS_DATABASE_ID,
+      filter: {
+        property: "Invoices",
+        relation: {
+          contains: id,
+        },
+      },
     });
 
-    const tableRows = blocksResponse.results as BlockObjectResponse[];
+    const itemPages = itemsResponse.results.filter(
+      (item): item is PageObjectResponse => "properties" in item
+    );
 
-    // 페이지 속성 + 테이블 블록을 결합하여 견적서 도메인 객체 생성
-    const invoice = mapPageToInvoice(page as PageObjectResponse, tableRows);
+    // 견적서 속성 + Items DB 품목을 결합하여 견적서 도메인 객체 생성
+    const invoice = mapPageToInvoice(page as PageObjectResponse, itemPages);
 
     return NextResponse.json({ success: true, data: invoice });
   } catch (error: unknown) {

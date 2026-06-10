@@ -19,6 +19,12 @@ if (!process.env.NOTION_DATABASE_ID) {
   );
 }
 
+if (!process.env.NOTION_ITEMS_DATABASE_ID) {
+  throw new Error(
+    "환경 변수 NOTION_ITEMS_DATABASE_ID가 설정되지 않았습니다. .env.local 파일을 확인하세요."
+  );
+}
+
 /**
  * Notion API 클라이언트 싱글톤 인스턴스
  * Next.js 서버 컴포넌트 및 Route Handler에서 import하여 사용합니다.
@@ -28,7 +34,12 @@ export const notion = new Client({
 });
 
 /**
- * 견적서가 저장된 Notion 데이터베이스 ID
- * 환경 변수로 관리하여 배포 환경별로 유연하게 설정 가능합니다.
+ * 견적서(Invoices)가 저장된 Notion 데이터베이스 ID
  */
 export const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID;
+
+/**
+ * 견적서 품목(Items)이 저장된 별도 Notion 데이터베이스 ID
+ * 품목은 Invoices DB와 Relation으로 연결된 독립 데이터베이스입니다.
+ */
+export const NOTION_ITEMS_DATABASE_ID = process.env.NOTION_ITEMS_DATABASE_ID;
