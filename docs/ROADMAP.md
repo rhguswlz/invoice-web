@@ -188,7 +188,7 @@
 
 #### PDF 다운로드 완성 (F003)
 - [x] `invoice-viewer.tsx`에 `window.print()` 기반 PDF 다운로드 버튼 구현 — **완료**
-- [ ] `app/globals.css`에 `@media print` 스타일 완성
+- [x] `app/globals.css`에 `@media print` 스타일 완성
   - 인쇄 시 헤더/푸터/내비게이션 숨김 처리 (`print:hidden`)
   - 견적서 본문 A4 용지 크기 최적화 (`@page { size: A4; margin: 1cm }`)
   - 페이지 구분선이 품목 테이블 중간을 자르지 않도록 `break-inside: avoid` 적용
@@ -198,22 +198,22 @@
 > **참고:** `html2canvas + jsPDF` 방식은 패키지가 이미 설치되어 있으나(`html2canvas`, `jsPDF`), 현재 구현은 `window.print()` 방식을 사용합니다. `window.print()` 방식으로 품질이 충분하다면 `html2canvas + jsPDF`는 사용하지 않습니다.
 
 #### 오류 처리 강화 (F012)
-- [ ] `app/not-found.tsx` 커스텀 404 페이지 개선
+- [x] `app/not-found.tsx` 커스텀 404 페이지 개선
   - 견적서를 찾을 수 없을 때 안내 메시지 추가
   - "목록으로 돌아가기" 링크 제공
-- [ ] `app/error.tsx` 커스텀 500 오류 페이지 개선
+- [x] `app/error.tsx` 커스텀 500 오류 페이지 개선
   - 재시도 버튼 (`router.refresh()`)
   - 오류 원인별 안내 메시지 (API 연결 실패, 만료된 견적서 등)
-- [ ] `app/invoices/[id]/page.tsx` 만료된 견적서 접근 시 안내 배너 확인
+- [x] `app/invoices/[id]/page.tsx` 만료된 견적서 접근 시 안내 배너 확인
   - `invoice-header.tsx`의 만료 배너가 정상 표시되는지 E2E 검증
 - [ ] Notion API 토큰 유효하지 않을 때 사용자 친화적 메시지 출력
 
 #### 엣지 케이스 대응
-- [ ] 노션 테이블 블록이 없는 견적서 (품목 0개) 처리 확인
+- [x] 노션 테이블 블록이 없는 견적서 (품목 0개) 처리 확인
   - `invoice-items-table.tsx`의 빈 상태 UI 동작 확인
-- [ ] `totalAmount = 0`인 목록 카드에서 "-" 표시 동작 확인
-- [ ] 노션 속성이 일부 누락된 페이지에서 매핑 오류 없이 처리되는지 확인
-- [ ] 환경 변수 `NEXT_PUBLIC_BASE_URL` 누락 시 fallback(`http://localhost:3000`) 동작 확인
+- [x] `totalAmount = 0`인 목록 카드에서 "-" 표시 동작 확인
+- [x] 노션 속성이 일부 누락된 페이지에서 매핑 오류 없이 처리되는지 확인
+- [x] 환경 변수 `NEXT_PUBLIC_BASE_URL` 누락 시 fallback(`http://localhost:3000`) 동작 확인
 
 **완료 기준 (Definition of Done):**
 - [ ] 인쇄 다이얼로그에서 "PDF로 저장"을 선택하면 올바른 레이아웃의 PDF가 생성된다
