@@ -8,11 +8,46 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ChevronRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { InvoiceListItem } from "@/types";
+import type { InvoiceListItem, InvoiceStatus } from "@/types";
 
 interface InvoiceCardProps {
   /** 목록 아이템 견적서 데이터 */
   invoice: InvoiceListItem;
+}
+
+/** 상태별 배지 설정 타입 */
+interface StatusBadgeConfig {
+  /** shadcn Badge variant */
+  variant: "default" | "secondary" | "destructive" | "outline";
+  /** 배지에 표시할 한국어 라벨 */
+  label: string;
+  /** 배지 커스텀 클래스 (완료 상태의 초록색 등) */
+  badgeClassName?: string;
+  /** 카드 전체에 적용할 클래스 (만료/취소 시 흐림 처리) */
+  cardClassName?: string;
+}
+
+/**
+ * 견적서 상태에 따른 배지 및 카드 스타일 설정을 반환합니다.
+ */
+function getStatusBadge(status: InvoiceStatus): StatusBadgeConfig {
+  switch (status) {
+    case "pending":
+      return { variant: "outline", label: "대기 중" };
+    case "active":
+      return { variant: "default", label: "유효" };
+    case "expired":
+      return { variant: "secondary", label: "만료됨", cardClassName: "opacity-70" };
+    case "completed":
+      return {
+        variant: "default",
+        label: "완료",
+        badgeClassName:
+          "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-0",
+      };
+    case "cancelled":
+      return { variant: "destructive", label: "취소됨", cardClassName: "opacity-50" };
+  }
 }
 
 /**
@@ -38,13 +73,14 @@ function formatDate(dateStr: string): string {
 }
 
 export function InvoiceCard({ invoice }: InvoiceCardProps) {
-  const isExpired = invoice.status === "expired";
+  // 상태에 따른 배지 설정 및 카드 스타일 계산
+  const statusBadge = getStatusBadge(invoice.status);
 
   return (
     <Card
       className={cn(
         "transition-shadow hover:shadow-md",
-        isExpired && "opacity-70"
+        statusBadge.cardClassName
       )}
     >
       <CardHeader className="pb-2">
@@ -52,9 +88,12 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
           <CardTitle className="text-base font-semibold">
             {invoice.invoiceNumber}
           </CardTitle>
-          {/* 견적서 상태 배지: 만료 여부에 따라 색상 구분 */}
-          <Badge variant={isExpired ? "secondary" : "default"}>
-            {isExpired ? "만료됨" : "유효"}
+          {/* 상태 배지: 5가지 상태 (대기 중 / 유효 / 만료됨 / 완료 / 취소됨) */}
+          <Badge
+            variant={statusBadge.variant}
+            className={statusBadge.badgeClassName}
+          >
+            {statusBadge.label}
           </Badge>
         </div>
       </CardHeader>

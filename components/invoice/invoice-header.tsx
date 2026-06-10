@@ -4,11 +4,82 @@
  */
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays } from "lucide-react";
-import type { Invoice } from "@/types";
+import type { Invoice, InvoiceStatus } from "@/types";
 
 interface InvoiceHeaderProps {
   /** 견적서 전체 데이터 */
   invoice: Invoice;
+}
+
+/** 상태 배너 설정 타입 */
+interface StatusBannerConfig {
+  /** 배너 컨테이너 색상 클래스 */
+  className: string;
+  /** 배너에 표시할 메시지 (아이콘 포함) */
+  message: string;
+}
+
+/** 상태 배지 설정 타입 */
+interface StatusBadgeConfig {
+  /** shadcn 배지 variant */
+  variant: "default" | "secondary" | "destructive" | "outline";
+  /** 배지에 표시할 한국어 라벨 */
+  label: string;
+  /** 배지 커스텀 클래스 (완료 상태의 초록색 등) */
+  badgeClassName?: string;
+}
+
+/**
+ * 상태에 따른 상단 안내 배너 설정을 반환합니다.
+ * 배너가 필요 없는 상태(대기/유효)는 null을 반환합니다.
+ */
+function getStatusBanner(status: InvoiceStatus): StatusBannerConfig | null {
+  switch (status) {
+    case "expired":
+      return {
+        className:
+          "bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
+        message: "⚠ 이 견적서의 유효기간이 만료되었습니다.",
+      };
+    case "cancelled":
+      return {
+        className:
+          "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200",
+        message: "✕ 이 견적서는 취소된 견적서입니다.",
+      };
+    case "completed":
+      return {
+        className:
+          "bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200",
+        message: "✓ 이 견적서는 완료된 견적서입니다.",
+      };
+    default:
+      // 대기(pending) / 유효(active) 상태는 배너를 표시하지 않음
+      return null;
+  }
+}
+
+/**
+ * 상태에 따른 배지 설정을 반환합니다.
+ */
+function getStatusBadge(status: InvoiceStatus): StatusBadgeConfig {
+  switch (status) {
+    case "pending":
+      return { variant: "outline", label: "대기 중" };
+    case "active":
+      return { variant: "default", label: "유효" };
+    case "expired":
+      return { variant: "secondary", label: "만료됨" };
+    case "completed":
+      return {
+        variant: "default",
+        label: "완료",
+        badgeClassName:
+          "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-0",
+      };
+    case "cancelled":
+      return { variant: "destructive", label: "취소됨" };
+  }
 }
 
 /**
@@ -24,14 +95,16 @@ function formatDate(dateStr: string): string {
 }
 
 export function InvoiceHeader({ invoice }: InvoiceHeaderProps) {
-  const isExpired = invoice.status === "expired";
+  // 상태별 배너 및 배지 설정 계산
+  const banner = getStatusBanner(invoice.status);
+  const statusBadge = getStatusBadge(invoice.status);
 
   return (
     <div className="space-y-6">
-      {/* 만료 배너: 견적서가 유효기간 이후인 경우에만 표시 */}
-      {isExpired && (
-        <div className="rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-          ⚠ 이 견적서의 유효기간이 만료되었습니다.
+      {/* 상태 안내 배너: 만료/취소/완료 상태일 때만 표시 */}
+      {banner && (
+        <div className={`rounded-lg px-4 py-3 text-sm ${banner.className}`}>
+          {banner.message}
         </div>
       )}
 
@@ -41,8 +114,11 @@ export function InvoiceHeader({ invoice }: InvoiceHeaderProps) {
           <p className="text-sm text-muted-foreground">견적서 번호</p>
           <h1 className="text-2xl font-bold">{invoice.invoiceNumber}</h1>
         </div>
-        <Badge variant={isExpired ? "secondary" : "default"} className="text-sm">
-          {isExpired ? "만료됨" : "유효"}
+        <Badge
+          variant={statusBadge.variant}
+          className={`text-sm ${statusBadge.badgeClassName ?? ""}`}
+        >
+          {statusBadge.label}
         </Badge>
       </div>
 
