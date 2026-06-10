@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code
 .playwright-mcp/
+
+# shrimp task manager (로컬 태스크 상태 — 자체 git 저장소)
+shrimp_data/
