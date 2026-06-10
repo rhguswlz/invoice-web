@@ -1,5 +1,5 @@
 {
-  "name": "claude-nextjs-starters",
+  "name": "invoice-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@notionhq/client": "^2.2.17",
     "@types/html2canvas": "^0.5.35",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html2canvas": "^1.4.1",

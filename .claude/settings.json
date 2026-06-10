@@ -1,6 +1,5 @@
 {
   "language": "Korean",
-  "agent": "docs-comments-writer",
   "hooks": {
     "Notification": [
       {

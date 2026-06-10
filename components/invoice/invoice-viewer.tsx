@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Download, Printer } from "lucide-react";
@@ -21,23 +21,62 @@ interface InvoiceViewerProps {
   invoice: Invoice;
 }
 
+/**
+ * 파일명으로 사용할 수 없는 문자를 안전하게 치환합니다.
+ * 브라우저 "PDF로 저장" 시 document.title이 기본 파일명으로 사용되므로,
+ * 경로 구분자 등 파일 시스템에서 문제가 되는 문자를 밑줄로 바꿉니다.
+ */
+function toSafeFileName(value: string): string {
+  return value.replace(/[\\/:*?"<>|]/g, "_").trim();
+}
+
 export function InvoiceViewer({ invoice }: InvoiceViewerProps) {
   const { isPdfLoading, setPdfLoading } = useInvoiceStore();
 
   /**
+   * 인쇄 수명주기를 beforeprint/afterprint 이벤트로 추적합니다.
+   * setTimeout 방식과 달리 모든 브라우저(특히 인쇄가 비동기인 Safari/Firefox)에서
+   * 실제 인쇄 다이얼로그가 닫힐 때 로딩 상태를 정확히 해제합니다.
+   *
+   * 또한 인쇄 직전 document.title을 견적서 정보 기반 파일명으로 바꿔
+   * "PDF로 저장" 시 제안되는 파일명을 의미 있게 만들고, 인쇄 후 원래 제목으로 복원합니다.
+   */
+  useEffect(() => {
+    const originalTitle = document.title;
+    const pdfTitle = toSafeFileName(
+      `견적서_${invoice.invoiceNumber}_${invoice.client.name || "고객"}`,
+    );
+
+    const handleBeforePrint = () => {
+      document.title = pdfTitle;
+      setPdfLoading(true);
+    };
+    const handleAfterPrint = () => {
+      document.title = originalTitle;
+      setPdfLoading(false);
+    };
+
+    window.addEventListener("beforeprint", handleBeforePrint);
+    window.addEventListener("afterprint", handleAfterPrint);
+
+    return () => {
+      window.removeEventListener("beforeprint", handleBeforePrint);
+      window.removeEventListener("afterprint", handleAfterPrint);
+      // 언마운트 시 제목이 바뀐 채로 남지 않도록 복원
+      document.title = originalTitle;
+    };
+  }, [invoice.invoiceNumber, invoice.client.name, setPdfLoading]);
+
+  /**
    * PDF 다운로드 핸들러
-   * window.print()를 호출하여 브라우저 인쇄 다이얼로그를 열고,
+   * window.print()를 호출하여 브라우저 인쇄 다이얼로그를 엽니다.
    * 사용자가 "PDF로 저장"을 선택하면 파일이 저장됩니다.
+   * 로딩 상태와 파일명 처리는 beforeprint/afterprint 이벤트에서 담당합니다.
    * globals.css의 @media print 스타일로 인쇄 레이아웃을 제어합니다.
    */
   const handlePdfDownload = useCallback(() => {
-    setPdfLoading(true);
-    // 인쇄 다이얼로그가 열리는 동안 로딩 상태 유지
-    setTimeout(() => {
-      window.print();
-      setPdfLoading(false);
-    }, 300);
-  }, [setPdfLoading]);
+    window.print();
+  }, []);
 
   return (
     <div>

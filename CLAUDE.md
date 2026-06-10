@@ -62,25 +62,37 @@ Notion DB
 
 ## Notion 데이터베이스 스키마
 
-`lib/invoice-mapper.ts`에서 아래 **한국어 속성명**을 하드코딩으로 참조합니다. 실제 노션 DB의 속성명과 정확히 일치해야 합니다.
+견적서는 **두 개의 노션 데이터베이스**로 구성됩니다. 견적서 본문은 `Invoices` DB, 품목은 별도 `Items` DB에 저장하고, `Invoices`의 `항목`(Relation) 속성으로 연결합니다. `lib/invoice-mapper.ts`가 아래 **한국어 속성명**을 하드코딩으로 참조하므로 실제 노션 DB와 정확히 일치해야 합니다.
+
+### Invoices DB (실제 존재하는 속성)
 
 | 속성명 | Notion 타입 |
 |--------|------------|
-| 제목 | Title |
-| 발급일 | Date |
+| 견적서 번호 | Title |
+| 발행일 | Date |
 | 유효기간 | Date |
-| 고객명 | Rich Text |
-| 고객 담당자 | Rich Text |
-| 고객 이메일 | Email |
-| 고객 연락처 | Phone |
-| 발급자명 | Rich Text |
-| 발급자 이메일 | Email |
-| 발급자 연락처 | Phone |
-| 발급자 주소 | Rich Text |
-| 사업자번호 | Rich Text |
-| 비고 | Rich Text |
+| 상태 | Status |
+| 클라이언트명명 | Rich Text |
+| 총금액 | Number |
+| 항목 | Relation → Items DB |
 
-**품목 데이터는 페이지 본문의 테이블 블록에 저장합니다** (Properties가 아님). 열 순서는 `품목명 | 수량 | 단가 | 단위 | 설명`이며, 첫 번째 행은 헤더로 건너뜁니다. `notion.blocks.children.list()`로 조회합니다.
+> ⚠️ `클라이언트명명`은 실제 노션 DB의 속성명입니다(오타처럼 보이지만 매퍼가 이 이름을 그대로 참조하므로 변경 시 양쪽을 함께 수정해야 함). `상태`는 Select가 아닌 **Status** 타입이며, `extractSelect()`가 두 타입을 모두 처리합니다.
+
+### Items DB
+
+| 속성명 | Notion 타입 |
+|--------|------------|
+| 항목명 | Title |
+| 수량 | Number |
+| 단가 | Number |
+| 금액 | Formula |
+| Invoices | Relation → Invoices DB |
+
+품목은 `app/api/invoices/[id]/route.ts`에서 `notion.databases.query()` + `relation` 필터로 Items DB를 조회합니다(페이지 본문 테이블 블록이 아님). 금액(Formula)이 비어 있으면 매퍼가 `수량 × 단가`로 계산합니다.
+
+### 선택(미존재) 속성 — 향후 확장용
+
+`mapPageToInvoice()`는 발급자/고객 연락처/비고 속성도 참조하지만, **현재 Invoices DB에는 존재하지 않아** 빈 문자열로 처리됩니다(뷰어에서 발급자가 `-`로 표시되는 이유). 필요 시 노션 DB에 아래 속성을 추가하면 자동 반영됩니다: `발급자명`(Text), `발급자 담당자`(Text), `발급자 이메일`(Email), `발급자 연락처`(Phone), `발급자 주소`(Text), `사업자번호`(Text), `고객 담당자`(Text), `고객 이메일`(Email), `고객 연락처`(Phone), `비고`(Rich Text).
 
 ## Next.js 16 주요 변경사항
 
@@ -108,7 +120,7 @@ export default async function Page({ params }: PageProps) {
 
 **도메인 타입** (`types/index.ts`): `Invoice`, `InvoiceListItem`, `InvoiceItem`, `Issuer`, `Client`, `InvoiceStatus`, `ApiResponse<T>`
 
-`InvoiceListItem`은 `Invoice`의 `Pick` 타입으로 목록 페이지용 경량 타입입니다. 목록에서 `totalAmount`는 품목 테이블을 별도 조회하지 않으므로 항상 `0`이며, 카드 UI에서는 `-`로 표시합니다.
+`InvoiceListItem`은 `Invoice`의 `Pick` 타입으로 목록 페이지용 경량 타입입니다. 목록에서 `totalAmount`는 Invoices DB의 `총금액`(Number) 속성을 그대로 사용하므로 Items DB를 별도 조회하지 않습니다.
 
 **API 응답 래퍼** (`ApiResponse<T>`):
 ```ts
@@ -116,8 +128,9 @@ type ApiResponse<T> = { success: true; data: T } | { success: false; error: stri
 ```
 
 **매핑 함수** (`lib/invoice-mapper.ts`):
-- `mapPageToInvoiceListItem(page)` — 목록용, 블록 조회 없음
-- `mapPageToInvoice(page, tableRows)` — 상세용, 테이블 블록 행 필요
+- `mapPageToInvoiceListItem(page)` — 목록용, Items DB 조회 없음
+- `mapItemPageToInvoiceItem(itemPage, invoiceId)` — Items DB 페이지 → 품목 변환
+- `mapPageToInvoice(page, itemPages)` — 상세용, Items DB에서 조회한 품목 페이지 목록 필요
 
 ## 설정 파일
 

@@ -206,7 +206,9 @@
   - 오류 원인별 안내 메시지 (API 연결 실패, 만료된 견적서 등)
 - [x] `app/invoices/[id]/page.tsx` 만료된 견적서 접근 시 안내 배너 확인
   - `invoice-header.tsx`의 만료 배너가 정상 표시되는지 E2E 검증
-- [ ] Notion API 토큰 유효하지 않을 때 사용자 친화적 메시지 출력
+- [x] Notion API 토큰 유효하지 않을 때 사용자 친화적 메시지 출력 — **완료**
+  - 두 Route Handler(`route.ts`, `[id]/route.ts`)에서 `isNotionClientError` + `APIErrorCode.Unauthorized`로 401 감지
+  - HTTP 401 + "서비스 인증에 문제가 있습니다. 관리자에게 문의해 주세요." 메시지 반환
 
 #### 엣지 케이스 대응
 - [x] 노션 테이블 블록이 없는 견적서 (품목 0개) 처리 확인
@@ -245,10 +247,11 @@
 
 #### 노션 데이터베이스 실제 연동 검증
 - [ ] 프로덕션 노션 데이터베이스 구조 확인 (속성명이 매퍼와 일치하는지)
-  - 필수 속성: 제목(Title), 발급일(Date), 유효기간(Date), 고객명(Text), 고객 담당자(Text), 고객 이메일(Email), 발급자명(Text), 발급자 이메일(Email), 발급자 연락처(Phone), 사업자번호(Text), 비고(Rich Text)
-  - 선택 속성: 고객 연락처(Phone), 발급자 주소(Text)
-- [ ] 노션 페이지 본문에 테이블 블록 형식으로 품목 입력 후 조회 검증
-  - 테이블 열 순서: `품목명 | 수량 | 단가 | 단위 | 설명`
+  - Invoices DB 필수 속성: 견적서 번호(Title), 발행일(Date), 유효기간(Date), 상태(Status), 클라이언트명명(Rich Text), 총금액(Number), 항목(Relation → Items DB)
+  - Items DB 필수 속성: 항목명(Title), 수량(Number), 단가(Number), 금액(Formula), Invoices(Relation → Invoices DB)
+  - 선택(미존재) 속성: 발급자명/발급자 담당자/발급자 이메일/발급자 연락처/발급자 주소/사업자번호/고객 담당자/고객 이메일/고객 연락처/비고 — 추가 시 자동 반영
+- [ ] Items DB에 품목 입력 후 `항목`(Relation)으로 연결하여 조회 검증
+  - 매퍼는 `notion.databases.query()` + relation 필터로 Items DB를 조회 (페이지 본문 테이블 블록이 아님)
 - [ ] 실제 데이터로 견적서 뷰어 최종 검토 (레이아웃, 금액 계산, 날짜 포맷)
 
 #### 운영 모니터링 준비

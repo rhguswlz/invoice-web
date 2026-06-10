@@ -6,6 +6,7 @@
  * 노션 토큰 보호를 위해 서버 사이드에서만 실행됩니다.
  */
 import { NextResponse } from "next/server";
+import { APIErrorCode, isNotionClientError } from "@notionhq/client";
 import { notion, NOTION_DATABASE_ID } from "@/lib/notion";
 import { mapPageToInvoiceListItem } from "@/lib/invoice-mapper";
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
@@ -32,6 +33,15 @@ export async function GET(): Promise<NextResponse<ApiResponse<InvoiceListItem[]>
 
     return NextResponse.json({ success: true, data: invoices });
   } catch (error) {
+    // 노션 API 토큰이 유효하지 않은 경우 (401 Unauthorized)
+    if (isNotionClientError(error) && error.code === APIErrorCode.Unauthorized) {
+      console.error("노션 API 인증 오류:", error);
+      return NextResponse.json(
+        { success: false, error: "서비스 인증에 문제가 있습니다. 관리자에게 문의해 주세요." },
+        { status: 401 }
+      );
+    }
+
     console.error("견적서 목록 조회 오류:", error);
     return NextResponse.json(
       { success: false, error: "견적서 목록을 불러오는 중 오류가 발생했습니다." },

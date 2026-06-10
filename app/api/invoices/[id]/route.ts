@@ -7,6 +7,7 @@
  * 완전한 견적서를 구성합니다.
  */
 import { NextResponse } from "next/server";
+import { APIErrorCode, isNotionClientError } from "@notionhq/client";
 import { notion, NOTION_ITEMS_DATABASE_ID } from "@/lib/notion";
 import { mapPageToInvoice } from "@/lib/invoice-mapper";
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
@@ -54,6 +55,15 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: invoice });
   } catch (error: unknown) {
+    // 노션 API 토큰이 유효하지 않은 경우 (401 Unauthorized)
+    if (isNotionClientError(error) && error.code === APIErrorCode.Unauthorized) {
+      console.error("노션 API 인증 오류:", error);
+      return NextResponse.json(
+        { success: false, error: "서비스 인증에 문제가 있습니다. 관리자에게 문의해 주세요." },
+        { status: 401 }
+      );
+    }
+
     // 존재하지 않는 페이지 ID 접근 시 노션에서 404 오류 반환
     if (
       typeof error === "object" &&
