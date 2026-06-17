@@ -17,8 +17,8 @@ import { InvoiceSummary } from "./invoice-summary";
 import type { Invoice } from "@/types";
 
 interface InvoiceViewerProps {
-  /** 렌더링할 견적서 데이터 */
   invoice: Invoice;
+  autoPrint?: boolean;
 }
 
 /**
@@ -30,17 +30,9 @@ function toSafeFileName(value: string): string {
   return value.replace(/[\\/:*?"<>|]/g, "_").trim();
 }
 
-export function InvoiceViewer({ invoice }: InvoiceViewerProps) {
+export function InvoiceViewer({ invoice, autoPrint = false }: InvoiceViewerProps) {
   const { isPdfLoading, setPdfLoading } = useInvoiceStore();
 
-  /**
-   * 인쇄 수명주기를 beforeprint/afterprint 이벤트로 추적합니다.
-   * setTimeout 방식과 달리 모든 브라우저(특히 인쇄가 비동기인 Safari/Firefox)에서
-   * 실제 인쇄 다이얼로그가 닫힐 때 로딩 상태를 정확히 해제합니다.
-   *
-   * 또한 인쇄 직전 document.title을 견적서 정보 기반 파일명으로 바꿔
-   * "PDF로 저장" 시 제안되는 파일명을 의미 있게 만들고, 인쇄 후 원래 제목으로 복원합니다.
-   */
   useEffect(() => {
     const originalTitle = document.title;
     const pdfTitle = toSafeFileName(
@@ -62,10 +54,16 @@ export function InvoiceViewer({ invoice }: InvoiceViewerProps) {
     return () => {
       window.removeEventListener("beforeprint", handleBeforePrint);
       window.removeEventListener("afterprint", handleAfterPrint);
-      // 언마운트 시 제목이 바뀐 채로 남지 않도록 복원
       document.title = originalTitle;
     };
   }, [invoice.invoiceNumber, invoice.client.name, setPdfLoading]);
+
+  useEffect(() => {
+    if (autoPrint) {
+      const timer = setTimeout(() => window.print(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint]);
 
   /**
    * PDF 다운로드 핸들러

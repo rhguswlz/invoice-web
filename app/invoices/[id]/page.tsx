@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ print?: string }>;
 }
 
 /**
@@ -48,8 +49,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function InvoiceViewerPage({ params }: PageProps) {
+export default async function InvoiceViewerPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { print } = await searchParams;
   const invoice = await fetchInvoice(id);
 
   // 견적서가 없으면 Next.js 기본 404 페이지로 이동
@@ -57,9 +59,11 @@ export default async function InvoiceViewerPage({ params }: PageProps) {
     notFound();
   }
 
+  const autoPrint = print === "1";
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
-      <InvoiceViewer invoice={invoice} />
+      <InvoiceViewer invoice={invoice} autoPrint={autoPrint} />
     </div>
   );
 }
